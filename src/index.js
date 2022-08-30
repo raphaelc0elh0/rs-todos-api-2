@@ -9,20 +9,61 @@ app.use(cors());
 
 const users = [];
 
+const isValidUUID = (str) => {
+  // Regular expression to check if string is a valid UUID
+  const regexExp = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
+
+  return regexExp.test(str);
+}
+
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+
+  const existingUser = users.find(user => user.username === username)
+  if (!existingUser) return response.status(404).json({ error: 'User not found' })
+
+  request.user = existingUser
+
+  return next()
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const { user } = request
+
+  if (!user.pro && user.todos.length >= 10) {
+    return response.status(403).json({ error: 'Not available' })
+  }
+
+  return next()
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers
+  const { id } = request.params
+
+  if (!isValidUUID(id)) return response.status(400).json({ error: 'UUID not valid' })
+
+  const existingUser = users.find(user => user.username === username)
+  if (!existingUser) return response.status(404).json({ error: 'User not found' })
+
+  const existingTODO = existingUser.todos.find(todo => todo.id === id)
+  if (!existingTODO) return response.status(404).json({ error: 'TODO not found' })
+
+  request.user = existingUser
+  request.todo = existingTODO
+
+  return next()
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const { id } = request.params
+
+  const existingUser = users.find(user => user.id === id)
+  if (!existingUser) return response.status(404).json({ error: 'User not found' })
+
+  request.user = existingUser
+
+  return next()
 }
 
 app.post('/users', (request, response) => {
